@@ -1,0 +1,109 @@
+<html>
+<head>
+	<script>
+		/* 
+		 * http://www.html5canvastutorials.com 
+		 */
+
+		function graphics(canvas_id){
+			this.canvas_id = canvas_id;
+			
+			this.getContext = function(canvas_id){
+				return document.getElementById(canvas_id).getContext('2d');
+			}
+			
+			this.ctx = this.getContext(canvas_id)
+			var ctx = this.ctx;
+			
+			this.applyBrush = function(b){
+				if (b){
+					ctx.lineWidth   = b.width;
+					ctx.strokeStyle = b.style;
+					ctx.lineCap     = b.lineCap;
+				}
+			}
+			
+			var applyBrush = this.applyBrush;
+			
+			this.drawLine = function(b, x1, y1, x2, y2){
+				ctx.beginPath();
+				
+				ctx.moveTo(x1, y1);
+				ctx.lineTo(x2, y2);
+				
+				applyBrush(b);
+				
+				ctx.stroke();
+			};
+			
+			this.drawArc = function(b, centerX, centerY, radius, startAng /*rad*/, endAng /*rad*/, counterClockWise /* true-false*/){
+				ctx.beginPath();
+				
+				ctx.arc(centerX, centerY, centerY, radius, startAng, endAng, counterClockWise);
+				
+				applyBrush(b);
+				
+				ctx.stroke();
+			};
+						
+			this.drawQuadratic = function(b, x1, y1, ctrlx, ctrly, x2, y2){
+				ctx.beginPath();
+				
+				ctx.moveTo(x1, y1);
+				ctx.quadraticCurveTo(ctrlx, ctrly, x2, y2);
+				
+				applyBrush(b);
+				
+				ctx.stroke();
+			};
+			
+			this.drawBezier = function(b, x1, y1, ctrlx1, ctrly1, ctrlx2, ctrly2, x2, y2){
+				ctx.beginPath();
+				
+				ctx.moveTo(x1, y1);
+				ctx.bezierCurveTo(ctrlx1, ctrly1, ctrlx2, ctrly2, x2, y2)
+				
+				applyBrush(b);
+				
+				ctx.stroke();
+			}
+			
+			return this;
+		}
+		
+		function brush(width, style /* Color */, lineCap /* butt, square, round */) {
+			this.width   = width;
+			this.style   = style;
+			this.lineCap = lineCap;
+			
+			return this;
+		}
+		
+		/*
+		 * Tests
+		 */
+	
+		window.onload = function (){
+			var g = new graphics("cv");
+			var b1 = new brush(15, "#ff0000", "butt")
+			var b2 = new brush(5, "#0000ff", "round")
+			var b3 = new brush(15, "#00ff00", "square")
+			var b4 = new brush(10, "#000000", "butt")
+			
+			g.drawLine(b1, 200, 30, 450, 30);
+			
+			g.drawArc(b2, 200, 200, 10, 1.1 * Math.PI, 1.9 * Math.PI);
+			
+			g.drawQuadratic(b3, 188, 150, 288, 0, 388, 150);
+			
+			g.drawBezier(b4, 188, 130, 140, 10, 388, 10, 388, 170);
+		};
+		
+		
+	</script>
+</head>
+<body>
+	<canvas id="cv" width="1366" height="700">
+	</canvas>
+</body>
+</html>
