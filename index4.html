@@ -1,0 +1,196 @@
+<html>
+<head>
+<script>
+
+var WIDTH = 600, HEIGHT = 600;
+
+function Movable(){
+}
+Movable.prototype.update = function(state){
+	if(this.x) this.x = state.x;
+	if(this.y) this.y = state.y;
+}
+
+/* World - background */
+
+function World(width, height){
+	this.width = width;
+	this.height = height;
+}
+
+World.prototype.draw = function(ctx){
+	ctx.clearRect(0,0,this.width,this.height);
+	
+	ctx.beginPath();
+	ctx.rect(0,0,this.width,this.height);
+	ctx.fillStyle="black";
+	ctx.fill();
+	ctx.lineWidth=1;
+	ctx.strokeStyle="black";
+	ctx.stroke();
+}
+
+/* Barriers - fixed */
+
+function Barrier(){
+	this.x = this.y = this.radius = -1;
+}
+
+Barrier.prototype.draw = function (ctx){
+	ctx.beginPath();
+	ctx.arc(this.x, this.y, this.radius, 0, 2*Math.PI, false);
+	ctx.fillStyle="red";
+	ctx.fill();
+	ctx.lineWidth=1;
+	ctx.strokeStyle="red";
+	ctx.stroke();
+}
+
+function BarrierTopLeft(){
+	this.x = 0;
+	this.y = 0;
+	this.radius = 20;
+}
+BarrierTopLeft.prototype = new Barrier();
+BarrierTopLeft.prototype.constructor = BarrierTopLeft;
+
+function BarrierTopRight(){
+	this.x = WIDTH;
+	this.y = 0;
+	this.radius = 20;
+}
+BarrierTopRight.prototype = new Barrier();
+BarrierTopRight.prototype.constructor = BarrierTopRight;
+
+function BarrierBottomLeft(){
+	this.x = 0;
+	this.y = HEIGHT;
+	this.radius = 20;
+}
+BarrierBottomLeft.prototype = new Barrier();
+BarrierBottomLeft.prototype.constructor = BarrierBottomLeft;
+
+function BarrierBottomRight(){
+	this.x = WIDTH;
+	this.y = HEIGHT;
+	this.radius = 20;
+}
+BarrierBottomRight.prototype = new Barrier();
+BarrierBottomRight.prototype.constructor = BarrierBottomRight;
+
+/* Ball - dynamic */
+function Ball(){
+	this.x = WIDTH/2;
+	this.y = HEIGHT/2;
+	this.radius = 10;
+}
+
+Ball.prototype = new Movable();
+Ball.prototype.constructor = Ball;
+Ball.prototype.draw = function(ctx){
+	ctx.beginPath();
+	ctx.arc(this.x, this.y, this.radius, 0, 2*Math.PI, false);
+	ctx.fillStyle="white";
+	ctx.fill();
+	ctx.lineWidth=1;
+	ctx.strokeStyle="white";
+	ctx.stroke();
+}
+
+/* Players- dynamic, with constraints */
+
+function Player(){
+	this.x = 0;
+	this.y = 0;
+	this.height = 0;
+	this.width = 0;
+}
+Player.prototype = new Movable();
+Player.prototype.constructor = Player;
+Player.prototype.draw = function(ctx){
+	ctx.beginPath();
+	ctx.rect(this.x,this.y,this.width,this.height);
+	ctx.fillStyle="white";
+	ctx.fill();
+	ctx.lineWidth=1;
+	ctx.strokeStyle="white";
+	ctx.stroke();
+}
+
+function PlayerTop(){
+	this.x = 40;
+	this.y = 5;
+	this.height = 5;
+	this.width = 100;
+}
+PlayerTop.prototype = new Player();
+PlayerTop.prototype.constructor = PlayerTop;
+
+
+function PlayerBottom(){
+	this.x = 40;
+	this.y = HEIGHT - 5 - 5;
+	this.height = 5;
+	this.width = 100;
+}
+PlayerBottom.prototype = new Player();
+PlayerBottom.prototype.constructor = PlayerBottom;
+
+function PlayerLeft(side){
+	this.x = 5;
+	this.y = 40;
+	this.height = 100;
+	this.width = 5;
+}
+PlayerLeft.prototype = new Player();
+PlayerLeft.prototype.constructor = PlayerLeft;
+
+
+function PlayerRight(side){
+	this.x = WIDTH - 5 - 5;
+	this.y = 40;
+	this.height = 100;
+	this.width = 5;	
+}
+PlayerRight.prototype = new Player();
+PlayerRight.prototype.constructor = PlayerRight;
+
+
+window.onload = function(){
+	
+	var ctx = document.getElementById('cv').getContext('2d');
+	
+	var world = new World(WIDTH, HEIGHT);
+	world.draw(ctx);
+	
+	var barrier1 = new BarrierTopLeft();
+	barrier1.draw(ctx);
+	var barrier2 = new BarrierTopRight();
+	barrier2.draw(ctx);	
+	var barrier3 = new BarrierBottomLeft();
+	barrier3.draw(ctx);
+	var barrier4 = new BarrierBottomRight();
+	barrier4.draw(ctx);
+	
+	var ball = new Ball();
+	ball.draw(ctx);	
+	var pleft = new PlayerLeft();
+	pleft.draw(ctx);
+	var pright = new PlayerRight();
+	pright.draw(ctx);
+	var ptop = new PlayerTop();
+	ptop.draw(ctx);
+	var pbottom = new PlayerBottom();
+	pbottom.draw(ctx);
+};
+
+// Init physics
+
+
+</script>
+</head>
+<body>
+<canvas id="cv" width="600" height="600">
+</canvas>
+</body>
+</html>
