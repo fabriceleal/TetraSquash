@@ -1,5 +1,8 @@
 <html>
 <head>
+
+<script src="vendors/box2d/Box2d.min.js"></script>
+<script src="world_index4.js"></script>
 <script>
 
 var WIDTH = 600, HEIGHT = 600;
@@ -50,6 +53,7 @@ function BarrierTopLeft(){
 	this.x = 0;
 	this.y = 0;
 	this.radius = 20;
+	this.id = 'barrier_topleft';
 }
 BarrierTopLeft.prototype = new Barrier();
 BarrierTopLeft.prototype.constructor = BarrierTopLeft;
@@ -58,6 +62,7 @@ function BarrierTopRight(){
 	this.x = WIDTH;
 	this.y = 0;
 	this.radius = 20;
+	this.id = 'barrier_topright';
 }
 BarrierTopRight.prototype = new Barrier();
 BarrierTopRight.prototype.constructor = BarrierTopRight;
@@ -66,6 +71,7 @@ function BarrierBottomLeft(){
 	this.x = 0;
 	this.y = HEIGHT;
 	this.radius = 20;
+	this.id = 'barrier_bottomleft';
 }
 BarrierBottomLeft.prototype = new Barrier();
 BarrierBottomLeft.prototype.constructor = BarrierBottomLeft;
@@ -74,6 +80,7 @@ function BarrierBottomRight(){
 	this.x = WIDTH;
 	this.y = HEIGHT;
 	this.radius = 20;
+	this.id = 'barrier_bottomright';
 }
 BarrierBottomRight.prototype = new Barrier();
 BarrierBottomRight.prototype.constructor = BarrierBottomRight;
@@ -83,6 +90,7 @@ function Ball(){
 	this.x = WIDTH/2;
 	this.y = HEIGHT/2;
 	this.radius = 10;
+	this.id = 'barrier_ball';
 }
 
 Ball.prototype = new Movable();
@@ -122,6 +130,7 @@ function PlayerTop(){
 	this.y = 5;
 	this.height = 5;
 	this.width = 100;
+	this.id = 'playertop';
 }
 PlayerTop.prototype = new Player();
 PlayerTop.prototype.constructor = PlayerTop;
@@ -132,6 +141,7 @@ function PlayerBottom(){
 	this.y = HEIGHT - 5 - 5;
 	this.height = 5;
 	this.width = 100;
+	this.id = 'playerbottom';
 }
 PlayerBottom.prototype = new Player();
 PlayerBottom.prototype.constructor = PlayerBottom;
@@ -141,6 +151,7 @@ function PlayerLeft(side){
 	this.y = 40;
 	this.height = 100;
 	this.width = 5;
+	this.id = 'playerleft';
 }
 PlayerLeft.prototype = new Player();
 PlayerLeft.prototype.constructor = PlayerLeft;
@@ -151,10 +162,22 @@ function PlayerRight(side){
 	this.y = 40;
 	this.height = 100;
 	this.width = 5;	
+	this.id = 'playerright';
 }
 PlayerRight.prototype = new Player();
 PlayerRight.prototype.constructor = PlayerRight;
 
+
+window.requestAnimFrame = (function(){
+	return  window.requestAnimationFrame     || 
+		  window.webkitRequestAnimationFrame || 
+		  window.mozRequestAnimationFrame    || 
+		  window.oRequestAnimationFrame      || 
+		  window.msRequestAnimationFrame     || 
+		  function(/* function */ callback, /* DOMElement */ element){
+			window.setTimeout(callback, 1000 / 60);
+		  };
+})();
 
 window.onload = function(){
 	
@@ -182,9 +205,57 @@ window.onload = function(){
 	ptop.draw(ctx);
 	var pbottom = new PlayerBottom();
 	pbottom.draw(ctx);
-};
+	
+	var message = {
+		barriers : [barrier1, barrier2, barrier3, barrier4],
+		ball : ball,
+		players  : [pleft, pright, ptop, pbottom],
+		all : { }
+	};
+	
+	message.all[barrier1.id]= barrier1 
+	message.all[barrier2.id]= barrier2 
+	message.all[barrier3.id]= barrier3 
+	message.all[barrier4.id]= barrier4
+	message.all[ball.id]	= ball 
+	message.all[pleft.id]	= pleft
+	message.all[pright.id]	= pright
+	message.all[ptop.id]	= ptop
+	message.all[pbottom.id]	= pbottom
+	
+	var physics = new PhysicsWorld(30, false, ctx, true);
+	physics.setBodies(message);
+	
+	// Game loop
+	(function loop(){
+		ctx.clearRect(0,0,600,600)
+		
+		// update physics state
+		physics.update(function(newWorld) {
+			//console.log('callback of update');
 
-// Init physics
+			// Update entities
+			for(var id in newWorld){
+				var entity = message.all[id];
+				if(entity && entity.update){
+					entity.update(newWorld[id]);
+				}
+			}			
+			/*
+			world.draw(ctx);		
+			// Draw objs
+			for(var i in message.all){
+				message.all[i].draw(ctx);
+			}*/
+			
+			window.requestAnimFrame(loop);
+		});
+	})();
+	
+	setTimeout(function(){ physics.applyImpulse(ball.id, 15) }, 1000)
+	setTimeout(function(){ physics.applyImpulse(pbottom.id, 15) }, 1000)
+	
+};
 
 
 </script>

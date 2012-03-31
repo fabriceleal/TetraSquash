@@ -1,6 +1,6 @@
 
 
-importScripts("vendors/box2d/Box2d.min.js");
+//importScripts("vendors/box2d/Box2d.min.js");
 
 // Nice aliases
 var   b2Vec2 = Box2D.Common.Math.b2Vec2
@@ -18,16 +18,33 @@ var   b2Vec2 = Box2D.Common.Math.b2Vec2
 /*
  * Initializes the physics world, creates the ground.
  */
-function PhysicsWorld (intervalRate, adaptive){
+function PhysicsWorld (intervalRate, adaptive, ctx, withDebug){
 	this.intervalRate = parseInt(intervalRate);
 	this.adaptive = adaptive;
 	
 	this.lastTimestamp = Date.now();
 	
-	this.world = new b2World(new b2Vec2(0, 10) /* gravity*/, true /*allow sleep*/);
+	this.world = new b2World(new b2Vec2(0, 1) /* gravity*/, true /*allow sleep*/);
 	
-	var SCALE = 30;
+	this.SCALE = 30;
 	
+	this.fixDef = new b2FixtureDef;
+	this.bodyDef = new b2BodyDef;
+	
+	this.bodiesMap = {}
+	
+	if(withDebug && ctx){
+
+		var debugDraw = new b2DebugDraw();
+		debugDraw.SetSprite( ctx );
+		debugDraw.SetDrawScale( this.SCALE );
+		debugDraw.SetFillAlpha( 0.3 );
+		debugDraw.SetLineThickness( 2.0 );
+		debugDraw.SetFlags( b2DebugDraw.e_shapeBit | b2DebugDraw.e_jointBit);
+		this.world.SetDebugDraw(debugDraw);
+	}	
+
+	/*
 	this.fixDef = new b2FixtureDef;
 	this.fixDef.density = 1.0;
 	this.fixDef.friction = 0.5;
@@ -41,51 +58,108 @@ function PhysicsWorld (intervalRate, adaptive){
 	// positions the center of the object (not upper left!)
 	this.bodyDef.position.x = 1300 / 2 / SCALE;
 	this.bodyDef.position.y = 600 / (SCALE * 1.15);
-
+	
 	this.fixDef.shape = new b2PolygonShape;
 
 	// half width, half height. eg actual height here is 1 unit
 	//this.fixDef.shape.SetAsBox((1300 / SCALE) / 2, (10/SCALE) / 2);
-	this.fixDef.shape.SetAsBox((1300 / SCALE),  /*1*/ (10/SCALE) /2); // Full width
+	this.fixDef.shape.SetAsBox((1300 / SCALE),  /*1 / (10/SCALE) /2); // Full width
 	
 	this.world.CreateBody(this.bodyDef).CreateFixture(this.fixDef);
+	*/
 };
 
 /*
  * Updates the simulation
  */
-PhysicsWorld.prototype.update = function(){
+PhysicsWorld.prototype.update = function(callback){
 	var now = Date.now();
 	var stepRate = (this.adaptive) ? (now - this.lastTimestamp) / 1000 : (1 / this.intervalRate);
 	
 	this.lastTimestamp = now;
 	this.world.Step(stepRate /*frame-rate*/, 10 /* velocity iterations*/, 10 /* position iterations*/)
+	this.world.DrawDebugData();
 	this.world.ClearForces();
-	this.sendUpdate();
-}
-
-/*
- * Sends coordinates of the bodies to the entities
- */
-PhysicsWorld.prototype.sendUpdate = function(){
+	
 	var world = {};
 	for(var b = this.world.GetBodyList(); b; b = b.m_next){
 		if (typeof b.GetUserData() !== 'undefined' && b.GetUserData() != null){
 			world[b.GetUserData()] = {
-				x : b.GetPosition().x,
-				y : b.GetPosition().y,
+				x : b.GetPosition().x * this.SCALE,
+				y : b.GetPosition().y * this.SCALE,
 				a : b.GetAngle()
 			};
 		}
 	}
-	postMessage(world);
+	
+	callback(world);
 }
 
 /*
  * Creates physical bodies from list of entities
  */
 PhysicsWorld.prototype.setBodies = function(bodyEntities){
+		
+	var entity = bodyEntities.ball;
+	
+	this.fixDef.shape = new b2CircleShape(entity.radius / this.SCALE);
+		
 	this.bodyDef.type = b2Body.b2_dynamicBody;
+	this.bodyDef.position.x = entity.x / this.SCALE;
+	this.bodyDef.position.y = entity.y / this.SCALE;
+	this.bodyDef.userData = entity.id;
+	this.bodiesMap[entity.id] = this.world.CreateBody(this.bodyDef) 
+	this.bodiesMap[entity.id].CreateFixture(this.fixDef);
+
+	for(var i in bodyEntities.players){
+		entity = bodyEntities.players[i];
+		
+		this.bodyDef.type = b2Body.b2_staticBody;
+
+		// positions the center of the object (not upper left!)
+		this.bodyDef.position.x = (entity.x + entity.width ) / this.SCALE;
+		this.bodyDef.position.y = (entity.y + entity.height ) / this.SCALE;
+		this.bodyDef.userData = entity.id;
+		
+		this.fixDef.shape = new b2PolygonShape;
+		this.fixDef.shape.SetAsBox( (entity.width / 2) / this.SCALE, (entity.height / 2) / this.SCALE);
+		
+		this.bodiesMap[entity.id] = this.world.CreateBody(this.bodyDef) 
+		this.bodiesMap[entity.id].CreateFixture(this.fixDef);
+	}
+	
+	for(var i in bodyEntities.barriers){
+		entity = bodyEntities.barriers[i];
+		
+		this.bodyDef.type = b2Body.b2_staticBody;
+
+		// positions the center of the object (not upper left!)
+		this.bodyDef.position.x = (entity.x ) / this.SCALE;
+		this.bodyDef.position.y = (entity.y ) / this.SCALE;
+		this.bodyDef.userData = entity.id;
+		
+		this.fixDef.shape = new b2CircleShape(entity.radius / this.SCALE);
+				
+		this.bodiesMap[entity.id] = this.world.CreateBody(this.bodyDef) 
+		this.bodiesMap[entity.id].CreateFixture(this.fixDef);
+	}
+	
+	/*
+	entity = bodyEntities.all['playertop'];
+	
+	this.bodyDef.type = b2Body.b2_staticBody;
+
+	// positions the center of the object (not upper left!)
+	this.bodyDef.position.x = (entity.x + entity.width / 2) / this.SCALE;
+	this.bodyDef.position.y = (entity.y + entity.height / 2) / this.SCALE;
+	this.bodyDef.userData = 'playertop';
+	
+	this.fixDef.shape = new b2PolygonShape;
+	this.fixDef.shape.SetAsBox( (entity.width / 2) / this.SCALE, (entity.height / 2) / this.SCALE);
+	
+	this.world.CreateBody(this.bodyDef).CreateFixture(this.fixDef);
+	*/
+	/*
 	for(var id in bodyEntities){
 		var entity = bodyEntities[id];
 		
@@ -95,21 +169,30 @@ PhysicsWorld.prototype.setBodies = function(bodyEntities){
 		this.bodyDef.position.y = entity.y;
 		this.bodyDef.userData = entity.id;
 		this.world.CreateBody(this.bodyDef).CreateFixture(this.fixDef);		
-	}
+	}*/
+		
+	
 	this.ready = true;
 }
 
-var phWorld = new PhysicsWorld(30, false);
+PhysicsWorld.prototype.applyImpulse = function(bodyId, power){
+    var body = this.bodiesMap[bodyId];
+    body.ApplyImpulse(new b2Vec2(Math.cos(230 * (Math.PI / 180)) * power,
+                                 Math.sin(230 * (Math.PI / 180)) * power),
+                                 body.GetWorldCenter());
+}
 
-var loop = function(){	
-	if(phWorld.ready){
-		phWorld.update();
-	}
-};
+//var phWorld = new PhysicsWorld(30, false);
+
+//var loop = function(){	
+//if(phWorld.ready){
+//		phWorld.update();
+//	}
+//};
 
 // Start loop
-setInterval(loop, 1000/30);
+//setInterval(loop, 1000/30);
 
-self.onmessage = function(e){
-	phWorld.setBodies(e.data);
-};
+//self.onmessage = function(e){
+//	phWorld.setBodies(e.data);
+//};
