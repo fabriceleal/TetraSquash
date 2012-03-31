@@ -13,6 +13,8 @@ var   b2Vec2 = Box2D.Common.Math.b2Vec2
 	 , b2PolygonShape = Box2D.Collision.Shapes.b2PolygonShape
 	 , b2CircleShape = Box2D.Collision.Shapes.b2CircleShape
 	 , b2DebugDraw = Box2D.Dynamics.b2DebugDraw
+	 , b2PrismaticJointDef = Box2D.Dynamics.Joints.b2PrismaticJointDef
+	 , b2PrismaticJoint = Box2D.Dynamics.Joints.b2PrismaticJoint
 	   ;
 
 /*
@@ -24,7 +26,7 @@ function PhysicsWorld (intervalRate, adaptive, ctx, withDebug){
 	
 	this.lastTimestamp = Date.now();
 	
-	this.world = new b2World(new b2Vec2(0, 1) /* gravity*/, true /*allow sleep*/);
+	this.world = new b2World(new b2Vec2(0, 0) /* gravity*/, true /*allow sleep*/);
 	
 	this.SCALE = 30;
 	
@@ -114,11 +116,11 @@ PhysicsWorld.prototype.setBodies = function(bodyEntities){
 	for(var i in bodyEntities.players){
 		entity = bodyEntities.players[i];
 		
-		this.bodyDef.type = b2Body.b2_staticBody;
+		this.bodyDef.type = b2Body.b2_dynamicBody;
 
 		// positions the center of the object (not upper left!)
-		this.bodyDef.position.x = (entity.x + entity.width ) / this.SCALE;
-		this.bodyDef.position.y = (entity.y + entity.height ) / this.SCALE;
+		this.bodyDef.position.x = (entity.x + entity.width / 2) / this.SCALE;
+		this.bodyDef.position.y = (entity.y + entity.height / 2) / this.SCALE;
 		this.bodyDef.userData = entity.id;
 		
 		this.fixDef.shape = new b2PolygonShape;
@@ -143,6 +145,46 @@ PhysicsWorld.prototype.setBodies = function(bodyEntities){
 		this.bodiesMap[entity.id] = this.world.CreateBody(this.bodyDef) 
 		this.bodiesMap[entity.id].CreateFixture(this.fixDef);
 	}
+	
+	var joint = new b2PrismaticJointDef();
+	/*joint.Initialize(
+			this.bodiesMap['playerleft'], 
+			this.bodiesMap['playerbottom'], 
+			this.bodiesMap['playerbottom'].GetWorldCenter(),
+			new b2Vec2(1.0, 0.0));
+	*/
+	
+	joint.bodyA = this.bodiesMap['playerleft'];
+	joint.bodyB = this.bodiesMap['playerbottom'];
+	joint.collideConnected = false;
+	
+	joint.localAxisA = new b2Vec2(1.0, 0.0);
+	
+	joint.localAnchorA = this.bodiesMap['playerleft'].GetWorldCenter();
+	joint.localAnchorB = this.bodiesMap['playerbottom'].GetWorldCenter();
+	
+	joint.referenceAngle = 2*Math.PI;
+	
+	joint.enableLimit = true; 
+	joint.lowerTranslation = 0; 
+	joint.upperTranslation = 15;
+	
+	joint.enableMotor = true; 
+	joint.maxMotorForce = 0; 
+	joint.motorSpeed = 15;
+	
+	/*joint.bodyA = this.bodiesMap['barrier_bottomleft']
+	joint.bodyB = this.bodiesMap['pbottom']
+	joint.collideConnected = false;
+	
+	joint.localAxisA = vec;
+	joint.referenceAngle = Math.PI*/
+	
+	/*joint.maxMotorForce = 0.0; 
+	joint.motorSpeed = 0.0; 
+	joint.enableMotor = false;*/
+	
+	//this.joint = this.world.CreateJoint(joint);
 	
 	/*
 	entity = bodyEntities.all['playertop'];
@@ -177,8 +219,8 @@ PhysicsWorld.prototype.setBodies = function(bodyEntities){
 
 PhysicsWorld.prototype.applyImpulse = function(bodyId, power){
     var body = this.bodiesMap[bodyId];
-    body.ApplyImpulse(new b2Vec2(Math.cos(230 * (Math.PI / 180)) * power,
-                                 Math.sin(230 * (Math.PI / 180)) * power),
+    body.ApplyImpulse(new b2Vec2(Math.cos(0 * (Math.PI / 180)) * power,
+                                 Math.sin(0 * (Math.PI / 180)) * power),
                                  body.GetWorldCenter());
 }
 

@@ -90,7 +90,7 @@ function Ball(){
 	this.x = WIDTH/2;
 	this.y = HEIGHT/2;
 	this.radius = 10;
-	this.id = 'barrier_ball';
+	this.id = 'ball';
 }
 
 Ball.prototype = new Movable();
@@ -124,6 +124,15 @@ Player.prototype.draw = function(ctx){
 	ctx.strokeStyle="white";
 	ctx.stroke();
 }
+Player.prototype.update = function(newWorld){
+	// x and y need to be fixed ...
+	newWorld.x -= this.width / 2;
+	newWorld.y -= this.height / 2;
+	
+	// Regular update
+	this.x = newWorld.x;
+	this.y = newWorld.y;
+}
 
 function PlayerTop(){
 	this.x = 40;
@@ -134,7 +143,6 @@ function PlayerTop(){
 }
 PlayerTop.prototype = new Player();
 PlayerTop.prototype.constructor = PlayerTop;
-
 
 function PlayerBottom(){
 	this.x = 40;
@@ -249,11 +257,16 @@ window.onload = function(){
 			}*/
 			
 			window.requestAnimFrame(loop);
+			if(physics.joint){
+				document.getElementById('dbg').innerHTML = 
+					'joint transl = ' + physics.joint.GetJointTranslation() +
+					', joint speed = ' + physics.joint.GetJointSpeed();
+			}
 		});
 	})();
 	
-	setTimeout(function(){ physics.applyImpulse(ball.id, 15) }, 1000)
-	setTimeout(function(){ physics.applyImpulse(pbottom.id, 15) }, 1000)
+	setTimeout(function(){ physics.applyImpulse(ball.id, 15) }, 500)
+	setTimeout(function(){ physics.applyImpulse(pbottom.id, 15) }, 500)
 	
 };
 
@@ -263,5 +276,7 @@ window.onload = function(){
 <body>
 <canvas id="cv" width="600" height="600">
 </canvas>
+<p id="dbg">
+</p>
 </body>
 </html>
