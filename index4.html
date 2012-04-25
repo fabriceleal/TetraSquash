@@ -1,11 +1,21 @@
 <html>
 <head>
-
+<link rel="stylesheet" type="text/css" href="index4.css" />
 <script src="vendors/box2d/Box2d.min.js"></script>
 <script src="world_index4.js"></script>
 <script>
 
 var WIDTH = 600, HEIGHT = 600;
+
+var PLAYER_HEIGHT = 5;
+var PLAYER_WIDTH  = 150;
+
+var INITIAL_FROM_REL_BOTTOM = 10;
+var INITIAL_FROM_REL_LEFT = (WIDTH/2)-(PLAYER_WIDTH/2);
+
+var GROUND_FROM_REL_BOTTOM = 2;
+
+var BARRIER_RADIUS = 30;
 
 function Movable(){
 }
@@ -52,7 +62,7 @@ Barrier.prototype.draw = function (ctx){
 function BarrierTopLeft(){
 	this.x = 0;
 	this.y = 0;
-	this.radius = 20;
+	this.radius = BARRIER_RADIUS;
 	this.id = 'barrier_topleft';
 }
 BarrierTopLeft.prototype = new Barrier();
@@ -61,7 +71,7 @@ BarrierTopLeft.prototype.constructor = BarrierTopLeft;
 function BarrierTopRight(){
 	this.x = WIDTH;
 	this.y = 0;
-	this.radius = 20;
+	this.radius = BARRIER_RADIUS;
 	this.id = 'barrier_topright';
 }
 BarrierTopRight.prototype = new Barrier();
@@ -70,7 +80,7 @@ BarrierTopRight.prototype.constructor = BarrierTopRight;
 function BarrierBottomLeft(){
 	this.x = 0;
 	this.y = HEIGHT;
-	this.radius = 20;
+	this.radius = BARRIER_RADIUS;
 	this.id = 'barrier_bottomleft';
 }
 BarrierBottomLeft.prototype = new Barrier();
@@ -79,7 +89,7 @@ BarrierBottomLeft.prototype.constructor = BarrierBottomLeft;
 function BarrierBottomRight(){
 	this.x = WIDTH;
 	this.y = HEIGHT;
-	this.radius = 20;
+	this.radius = BARRIER_RADIUS;
 	this.id = 'barrier_bottomright';
 }
 BarrierBottomRight.prototype = new Barrier();
@@ -96,13 +106,15 @@ function Ball(){
 Ball.prototype = new Movable();
 Ball.prototype.constructor = Ball;
 Ball.prototype.draw = function(ctx){
+	
 	ctx.beginPath();
 	ctx.arc(this.x, this.y, this.radius, 0, 2*Math.PI, false);
-	ctx.fillStyle="white";
+	ctx.fillStyle = "yellow"; /*Math.random() > 0.5 ?  : "black";*/
 	ctx.fill();
 	ctx.lineWidth=1;
-	ctx.strokeStyle="white";
+	ctx.strokeStyle = "yellow"; /*Math.random() > 0.5 ?  : "red";*/
 	ctx.stroke();
+	
 }
 
 /* Players- dynamic, with constraints */
@@ -112,6 +124,12 @@ function Player(){
 	this.y = 0;
 	this.height = 0;
 	this.width = 0;
+	this.ground = {
+		x : 0,
+		y : 0,
+		height : 0,
+		width : 0
+	};
 }
 Player.prototype = new Movable();
 Player.prototype.constructor = Player;
@@ -135,42 +153,66 @@ Player.prototype.update = function(newWorld){
 }
 
 function PlayerTop(){
-	this.x = 40;
-	this.y = 5;
-	this.height = 5;
-	this.width = 100;
+	this.x = INITIAL_FROM_REL_LEFT;
+	this.y = INITIAL_FROM_REL_BOTTOM;
+	this.height = PLAYER_HEIGHT;
+	this.width = PLAYER_WIDTH;
 	this.id = 'playertop';
+	this.ground = {
+		x : WIDTH / 2,
+		y : GROUND_FROM_REL_BOTTOM,
+		height : 2,
+		width : WIDTH
+	};
 }
 PlayerTop.prototype = new Player();
 PlayerTop.prototype.constructor = PlayerTop;
 
 function PlayerBottom(){
-	this.x = 40;
-	this.y = HEIGHT - 5 - 5;
-	this.height = 5;
-	this.width = 100;
+	this.x = INITIAL_FROM_REL_LEFT;
+	this.y = HEIGHT - PLAYER_HEIGHT - INITIAL_FROM_REL_BOTTOM;
+	this.height = PLAYER_HEIGHT;
+	this.width = PLAYER_WIDTH;
 	this.id = 'playerbottom';
+	this.ground = {
+		x : WIDTH / 2,
+		y : HEIGHT - GROUND_FROM_REL_BOTTOM,
+		height : 2,
+		width : WIDTH
+	};
 }
 PlayerBottom.prototype = new Player();
 PlayerBottom.prototype.constructor = PlayerBottom;
 
 function PlayerLeft(side){
-	this.x = 5;
-	this.y = 40;
-	this.height = 100;
-	this.width = 5;
+	this.x = INITIAL_FROM_REL_BOTTOM;
+	this.y = INITIAL_FROM_REL_LEFT;
+	this.height = PLAYER_WIDTH;
+	this.width = PLAYER_HEIGHT;
 	this.id = 'playerleft';
+	this.ground = {
+		x : GROUND_FROM_REL_BOTTOM,
+		y : HEIGHT / 2,
+		height : WIDTH,
+		width : 2
+	};
 }
 PlayerLeft.prototype = new Player();
 PlayerLeft.prototype.constructor = PlayerLeft;
 
 
 function PlayerRight(side){
-	this.x = WIDTH - 5 - 5;
-	this.y = 40;
-	this.height = 100;
-	this.width = 5;	
+	this.x = WIDTH - PLAYER_HEIGHT - INITIAL_FROM_REL_BOTTOM;
+	this.y = INITIAL_FROM_REL_LEFT;
+	this.height = PLAYER_WIDTH;
+	this.width = PLAYER_HEIGHT;	
 	this.id = 'playerright';
+	this.ground = {
+		x : WIDTH - GROUND_FROM_REL_BOTTOM,
+		y : HEIGHT / 2,
+		height : WIDTH,
+		width : 2
+	};
 }
 PlayerRight.prototype = new Player();
 PlayerRight.prototype.constructor = PlayerRight;
@@ -189,8 +231,9 @@ window.requestAnimFrame = (function(){
 
 window.onload = function(){
 	
-	var ctx = document.getElementById('cv').getContext('2d');
-	
+	var canvas = document.getElementById('cv');
+	var ctx = canvas.getContext('2d');
+
 	var world = new World(WIDTH, HEIGHT);
 	world.draw(ctx);
 	
@@ -231,7 +274,7 @@ window.onload = function(){
 	message.all[ptop.id]	= ptop
 	message.all[pbottom.id]	= pbottom
 	
-	var physics = new PhysicsWorld(30, false, ctx, true);
+	var physics = new PhysicsWorld(30, false, ctx, false);
 	physics.setBodies(message);
 	
 	// Game loop
@@ -248,15 +291,15 @@ window.onload = function(){
 				if(entity && entity.update){
 					entity.update(newWorld[id]);
 				}
-			}			
-			/*
+			}
+			/**/
+			// Draw world - Comment this to draw only Box2D debug
 			world.draw(ctx);		
-			// Draw objs
 			for(var i in message.all){
 				message.all[i].draw(ctx);
-			}*/
-			
-			window.requestAnimFrame(loop);
+			}
+			// End draw world
+						window.requestAnimFrame(loop);
 			if(physics.joint){
 				document.getElementById('dbg').innerHTML = 
 					'joint transl = ' + physics.joint.GetJointTranslation() +
@@ -265,8 +308,59 @@ window.onload = function(){
 		});
 	})();
 	
-	setTimeout(function(){ physics.applyImpulse(ball.id, 15) }, 500)
-	setTimeout(function(){ physics.applyImpulse(pbottom.id, 15) }, 500)
+	var boost = function(){ 
+		physics.applyImpulse(
+				ball.id, 
+				2, 
+				Math.floor(Math.random() * 360));
+		return true;
+	};
+	
+	setTimeout(
+			boost()
+			, 500)
+	/*
+	setTimeout(
+			function(){ 
+				physics.setVelocity(pbottom.id, 10, 0) 
+			}, 
+			1);*/
+	/*var move = function(){ 
+		var dir = -180 * Math.floor(Math.random() * 2)
+		
+		var i = 3000;
+		while(i--){
+			physics.setVelocity(ptop.id, 10, dir);
+		}
+		//sleep(i);
+		
+		setTimeout(move, 10);
+	};
+	
+	move();*/
+	
+	// Sometimes, it doesn't move .... why ?????
+	document.onkeydown = function(event){	
+		switch(event.which)	{
+			case 65: /* A <- */
+				physics.setVelocity(pbottom.id, 10, -180);
+				break;
+			case 68: /* D -> */
+				physics.setVelocity(pbottom.id, 10, 0);
+				break;
+			case 74: /* J <- */
+				physics.setVelocity(ptop.id, 10, -180);
+				break;
+			case 76: /* L -> */
+				physics.setVelocity(ptop.id, 10, 0);
+				break;
+			case 79: /* O */
+				boost();
+				break;
+			/*default:
+				alert(event.which);*/
+		}
+	}
 	
 };
 
@@ -274,9 +368,22 @@ window.onload = function(){
 </script>
 </head>
 <body>
+
+<div class="left_column">
 <canvas id="cv" width="600" height="600">
 </canvas>
+</div>
+
+<div class="right_column">
 <p id="dbg">
 </p>
+<div>
+<div>Top: <div id="playertop">0</div></div>
+<div>Left: <div id="playerleft">0</div></div>
+<div>Bottom: <div id="playerbottom">0</div></div>
+<div>Right: <div id="playerright">0</div></div>
+</div>
+</div>
+
 </body>
 </html>

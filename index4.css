@@ -1,0 +1,14 @@
+
+.left_column {
+	width : 45%;
+	float : left;
+}
+
+.right_column {
+	width : 54%;
+	float : right;
+}
+
+.clear {
+	clear : both;
+}
